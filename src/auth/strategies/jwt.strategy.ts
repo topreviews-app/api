@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
-			secretOrKey: jwtSecret, // Тепер TypeScript знає що це string
+			secretOrKey: jwtSecret, 
 		});
 	}
 

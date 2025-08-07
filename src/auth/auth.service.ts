@@ -16,7 +16,6 @@ export class AuthService {
 	async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
 		const { email, password, name } = registerDto;
 
-		// Перевірити чи користувач вже існує
 		const existingUser = await this.prisma.user.findUnique({
 			where: { email },
 		});
@@ -25,11 +24,9 @@ export class AuthService {
 			throw new ConflictException('User with this email already exists');
 		}
 
-		// Хешувати пароль з перевіркою environment
 		const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
 		const hashedPassword = await bcrypt.hash(password, bcryptRounds);
 
-		// Створити користувача
 		const user = await this.prisma.user.create({
 			data: {
 				email,
@@ -43,7 +40,6 @@ export class AuthService {
 			},
 		});
 
-		// Генерувати токени
 		const tokens = await this.generateTokens(user.id, user.email);
 
 		return {
@@ -51,7 +47,7 @@ export class AuthService {
 			user: {
 				id: user.id,
 				email: user.email,
-				name: user.name || '', // 👈 Додати fallback для name якщо може бути null
+				name: user.name || '',
 			},
 		};
 	}
@@ -59,7 +55,6 @@ export class AuthService {
 	async login(loginDto: LoginDto): Promise<AuthResponseDto> {
 		const { email, password } = loginDto;
 
-		// Знайти користувача
 		const user = await this.prisma.user.findUnique({
 			where: { email },
 		});
@@ -68,13 +63,11 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 
-		// Перевірити пароль
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 		if (!isPasswordValid) {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 
-		// Генерувати токени
 		const tokens = await this.generateTokens(user.id, user.email);
 
 		return {

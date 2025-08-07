@@ -4,18 +4,15 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
 	async onModuleInit() {
-		// Підключитися до бази при ініціалізації модуля
 		await this.$connect();
 		console.log('✅ Connected to database');
 	}
 
 	async onModuleDestroy() {
-		// Відключитися від бази при знищенні модуля
 		await this.$disconnect();
 		console.log('❌ Disconnected from database');
 	}
 
-	// Метод для очищення бази (для тестів)
 	async cleanDatabase() {
 		if (process.env.NODE_ENV === 'production') return;
 
@@ -34,7 +31,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		}
 	}
 
-	// Утилітні методи для роботи з користувачами
 	async findUserById(id: string) {
 		return this.user.findUnique({
 			where: { id },
@@ -54,7 +50,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		});
 	}
 
-	// Утилітні методи для сайтів
 	async findUserSites(userId: string) {
 		return this.site.findMany({
 			where: { userId },
@@ -66,7 +61,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		});
 	}
 
-	// Утилітні методи для відгуків
 	async findSiteReviews(siteId: string, status?: 'PENDING' | 'APPROVED' | 'HIDDEN' | 'DELETED') {
 		return this.review.findMany({
 			where: {

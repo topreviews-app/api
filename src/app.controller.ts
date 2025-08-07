@@ -13,7 +13,6 @@ export class AppController {
 	@Get('health')
 	async getHealth() {
 		try {
-			// Тест підключення до бази
 			await this.prisma.$queryRaw`SELECT 1`;
 			return {
 				status: 'OK',
@@ -34,7 +33,6 @@ export class AppController {
 	@Get('test-data')
 	async getTestData() {
 		try {
-			// Використовуємо утилітні методи PrismaService
 			const users = await this.prisma.user.findMany({
 				select: {
 					id: true,
@@ -61,7 +59,7 @@ export class AppController {
 						select: { name: true, domain: true },
 					},
 				},
-				take: 10, // Перші 10 відгуків
+				take: 10,
 				orderBy: {
 					createdAt: 'desc',
 				},
@@ -90,14 +88,12 @@ export class AppController {
 	@Get('db-status')
 	async getDatabaseStatus() {
 		try {
-			// Детальна перевірка бази даних
 			const [users, sites, reviews] = await Promise.all([
 				this.prisma.user.count(),
 				this.prisma.site.count(),
 				this.prisma.review.count(),
 			]);
 
-			// Перевірити з'єднання
 			await this.prisma.$queryRaw`SELECT version()`;
 
 			return {
