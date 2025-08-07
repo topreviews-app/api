@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Updated Prisma schema with Analytics support
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -10,14 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================================
+// CORE MODELS
+// ==================================
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
   name      String?
+  plan      Plan     @default(FREE) // User-level plan
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // Relations
   sites     Site[]
   
   @@map("users")
@@ -28,13 +34,14 @@ model Site {
   name        String
   domain      String
   userId      String
-  plan        Plan     @default(FREE)
-  settings    Json     @default("{}")
+  settings    Json     @default("{}") // Widget design settings
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews     Review[]
+  widgetViews WidgetView[]
   
   @@map("sites")
 }
@@ -49,13 +56,59 @@ model Review {
   status      ReviewStatus @default(PENDING)
   ipAddress   String?
   userAgent   String?
+  country     String?      // For analytics
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   
+  // Relations
   site        Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
   
+  // Indexes for performance
+  @@index([siteId, status, createdAt])
+  @@index([ipAddress, createdAt]) // For anti-spam
   @@map("reviews")
 }
+
+// ==================================
+// ANALYTICS MODELS
+// ==================================
+
+model WidgetView {
+  id        String   @id @default(uuid())
+  siteId    String
+  ipAddress String?
+  userAgent String?
+  referrer  String?
+  country   String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  // Indexes for analytics queries
+  @@index([siteId, createdAt])
+  @@index([ipAddress, createdAt])
+  @@map("widget_views")
+}
+
+// Email notification tracking
+model NotificationLog {
+  id         String            @id @default(uuid())
+  userId     String
+  type       NotificationType
+  status     NotificationStatus @default(PENDING)
+  data       Json?             // Email content, recipient, etc.
+  sentAt     DateTime?
+  error      String?
+  createdAt  DateTime          @default(now())
+  
+  @@index([userId, type, createdAt])
+  @@map("notification_logs")
+}
+
+// ==================================
+// ENUMS
+// ==================================
 
 enum Plan {
   FREE
@@ -67,4 +120,18 @@ enum ReviewStatus {
   APPROVED
   HIDDEN
   DELETED
+}
+
+enum NotificationType {
+  NEW_REVIEW         // Instant notification about new review
+  WEEKLY_DIGEST      // Weekly summary for FREE users
+  MONTHLY_REPORT     // Monthly analytics report
+  PLAN_LIMIT_WARNING // When approaching plan limits
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
 }
